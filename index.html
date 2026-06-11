@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1A2E22">
+<title>Brand Lapses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1A2E22; --paper:#F7F6F1; --card:#FFFFFF;
+  --green:#2E7D4F; --green-soft:#E3EFE7;
+  --amber:#B45309; --amber-fill:#FDF0D5; --amber-line:#F0C36D;
+  --muted:#6B7268; --line:#E4E2D9;
+  --disp:'Barlow Semi Condensed',system-ui,sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{font-family:var(--body);background:var(--paper);color:var(--ink);min-height:100vh;font-variant-numeric:tabular-nums}
+button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
+
+/* ============ LOADER / ERROR ============ */
+#boot{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:var(--ink);color:#F2F1E8}
+#boot .mark{font-family:var(--disp);font-weight:700;font-size:.8rem;letter-spacing:.22em;text-transform:uppercase;color:#9DBFA8;margin-bottom:14px}
+#boot h1{font-family:var(--disp);font-weight:700;font-size:2.1rem;text-transform:uppercase;margin-bottom:14px}
+#bootMsg{color:#B9C4B9;font-size:.95rem;max-width:320px;line-height:1.5}
+#bootMsg a{color:var(--amber-line)}
+
+/* ============ APP ============ */
+#app{display:none;max-width:680px;margin:0 auto;padding-bottom:90px}
+header{position:sticky;top:0;z-index:20;background:var(--ink);color:#F2F1E8;padding:12px 16px 0;padding-top:max(12px,env(safe-area-inset-top))}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brandline{font-family:var(--disp);font-weight:700;font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;color:#9DBFA8}
+#weekEnd{font-size:.74rem;color:#9DBFA8;white-space:nowrap}
+#repSel{margin-top:8px;width:100%;appearance:none;-webkit-appearance:none;background:#24402F url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="%239DBFA8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat right 14px center;color:#fff;border:1px solid #3C5847;border-radius:12px;padding:12px 40px 12px 14px;font-family:var(--disp);font-weight:700;font-size:1.15rem;text-transform:uppercase;letter-spacing:.02em;outline:none}
+.statbar{display:flex;gap:18px;margin-top:10px;padding-bottom:10px}
+.statbar .st{display:flex;align-items:baseline;gap:5px}
+.statbar .st b{font-family:var(--disp);font-weight:700;font-size:1.15rem}
+.statbar .st span{font-size:.72rem;color:#9DBFA8;text-transform:uppercase;letter-spacing:.06em}
+.statbar .st.flag b{color:var(--amber-line)}
+nav{display:flex;background:var(--ink);padding:0 16px;margin:0 -16px}
+nav button{flex:1;font-family:var(--disp);font-weight:600;font-size:.92rem;letter-spacing:.06em;text-transform:uppercase;color:#8A9A8C;padding:12px 0 11px;border-bottom:3px solid transparent;min-height:44px}
+nav button.on{color:#fff;border-bottom-color:var(--amber-line)}
+nav button .n{display:inline-block;margin-left:5px;font-size:.72rem;background:rgba(240,195,109,.18);color:var(--amber-line);border-radius:999px;padding:1px 7px;vertical-align:1px}
+
+.searchwrap{padding:12px 16px 4px}
+#search{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:1rem;background:var(--card);color:var(--ink);outline:none}
+#search:focus{border-color:var(--green)}
+
+main{padding:8px 12px 0}
+.daylabel{font-family:var(--disp);font-weight:600;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:14px 6px 6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.card-head{width:100%;display:flex;align-items:center;gap:10px;padding:13px 14px;text-align:left;min-height:56px}
+.card-head .tt{flex:1;min-width:0}
+.card-head .nm{font-family:var(--disp);font-weight:700;font-size:1.02rem;line-height:1.15;text-transform:uppercase}
+.card-head .sub{font-size:.78rem;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{flex-shrink:0;font-family:var(--disp);font-weight:700;font-size:.8rem;border-radius:999px;padding:4px 10px}
+.badge.flag{background:var(--amber-fill);color:var(--amber);border:1px solid var(--amber-line)}
+.badge.ok{background:var(--green-soft);color:var(--green)}
+.chev{flex-shrink:0;width:18px;height:18px;color:var(--muted);transition:transform .15s}
+.card.open .chev{transform:rotate(180deg)}
+.card-body{display:none;border-top:1px solid var(--line)}
+.card.open .card-body{display:block}
+
+.brow{width:100%;display:block;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+.brow:last-child{border-bottom:0}
+.brow.lapsed{background:var(--amber-fill)}
+.brow .r1{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.brow .bn{font-family:var(--disp);font-weight:600;font-size:.95rem;text-transform:uppercase;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brow.lapsed .bn{color:var(--amber)}
+.brow .last{flex-shrink:0;font-size:.74rem;color:var(--muted)}
+.brow.lapsed .last{color:var(--amber);font-weight:600}
+.brow .r2{display:flex;align-items:center;gap:10px;margin-top:7px}
+.brow .cases{flex-shrink:0;font-size:.74rem;color:var(--muted);width:64px;text-align:right}
+
+.pulse{flex:1;display:flex;align-items:flex-end;gap:2px;height:26px;position:relative}
+.pulse .win{position:absolute;top:-3px;bottom:-3px;right:0;background:rgba(46,125,79,.10);border-left:1px dashed rgba(46,125,79,.45);border-radius:3px;pointer-events:none}
+.brow.lapsed .pulse .win{background:rgba(180,83,9,.10);border-left-color:rgba(180,83,9,.5)}
+.pulse i{flex:1;background:var(--green);border-radius:1.5px 1.5px 0 0;min-height:2px}
+.pulse i.z{background:var(--line);height:2px!important;border-radius:1px}
+.brow.lapsed .pulse i{background:#C98A3B}
+.brow.lapsed .pulse i.z{background:#EAD9B8}
+
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:.92rem;line-height:1.5}
+
+#backdrop{position:fixed;inset:0;background:rgba(20,30,24,.45);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+#backdrop.show{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--paper);border-radius:20px 20px 0 0;max-height:82vh;display:flex;flex-direction:column;transform:translateY(105%);transition:transform .25s cubic-bezier(.2,.8,.25,1);box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+#sheet.show{transform:translateY(0)}
+#sheet .grab{width:42px;height:4px;border-radius:2px;background:#C9C7BC;margin:10px auto 4px;flex-shrink:0}
+#sheet .sh-head{padding:6px 18px 12px;border-bottom:1px solid var(--line);flex-shrink:0}
+#sheet .sh-brand{font-family:var(--disp);font-weight:700;font-size:1.2rem;text-transform:uppercase;line-height:1.1}
+#sheet .sh-store{font-size:.82rem;color:var(--muted);margin-top:3px}
+#sheet .sh-list{overflow-y:auto;padding:6px 12px calc(20px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+#sheet .brow{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:8px 0}
+#sheet .brow.lapsed{background:var(--amber-fill)}
+#sheet .brow .bn{font-size:.88rem;text-transform:none;white-space:normal;font-family:var(--body);font-weight:600}
+#sheet .brow .sku{font-size:.72rem;color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (min-width:680px){html{font-size:17px}}
+</style>
+</head>
+<body>
+
+<div id="boot">
+  <div class="mark">Dora's Naturals · Field Tools</div>
+  <h1>Brand Lapses</h1>
+  <div id="bootMsg">Loading the latest report…</div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="hdr-row">
+      <div class="brandline">Brand Lapses</div>
+      <div id="weekEnd"></div>
+    </div>
+    <select id="repSel" aria-label="Choose rep"></select>
+    <div class="statbar">
+      <div class="st flag"><b id="stLapses">0</b><span>gaps</span></div>
+      <div class="st"><b id="stStores">0</b><span>stores</span></div>
+      <div class="st"><b id="stBrands">0</b><span>brands</span></div>
+    </div>
+    <nav>
+      <button data-tab="lapses" class="on">Gaps<span class="n" id="tabN"></span></button>
+      <button data-tab="stores">Stores</button>
+      <button data-tab="brands">Brands</button>
+    </nav>
+  </header>
+
+  <div class="searchwrap"><input id="search" type="search" placeholder="Search store, brand, item, or item #…" autocomplete="off"></div>
+  <main id="list"></main>
+</div>
+
+<div id="backdrop"></div>
+<div id="sheet">
+  <div class="grab"></div>
+  <div class="sh-head">
+    <div class="sh-brand" id="shBrand"></div>
+    <div class="sh-store" id="shStore"></div>
+  </div>
+  <div class="sh-list" id="shList"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// ---------- state ----------
+let D = null;             // raw data.json
+let recentFrom = 0;       // first week index inside the check window
+let groups = [];          // store+brand groups for the current rep selection
+let groupIdx = new Map(); // key -> group
+let tab = 'lapses';
+let query = '';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+};
+
+// ---------- boot: fetch data.json ----------
+fetch('data.json?v=' + Date.now())
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(init)
+  .catch(err => {
+    $('bootMsg').innerHTML = 'Couldn\u2019t load <b>data.json</b> (' + esc(err.message) + ').<br><br>' +
+      'Make sure data.json sits next to this page in the repo, then refresh. If you\u2019re opening this file directly from disk, serve it locally instead: <code>python -m http.server</code>';
+  });
+
+function wkDate(s){ const p = s.split('-').map(Number); return new Date(p[2], p[0]-1, p[1]); }
+
+function init(data){
+  D = data;
+  const endD = wkDate(D.weeks[D.weeks.length-1]);
+  const startD = new Date(endD); startD.setDate(startD.getDate() - 7 * (D.recentWeeks || 4));
+  recentFrom = D.weeks.findIndex(c => wkDate(c) >= startD);
+  if (recentFrom < 0) recentFrom = Math.max(0, D.weeks.length - ((D.recentWeeks||4)+1));
+
+  // rep picker
+  const sel = $('repSel');
+  sel.innerHTML = '<option value="-1">All reps</option>' +
+    D.reps.map((r,i) => '<option value="' + i + '">' + esc(r) + '</option>').join('');
+  const saved = store.get('bl_rep');
+  if (saved !== null && (saved === '-1' || (D.reps[+saved] !== undefined))) sel.value = saved;
+  else if (D.reps.length === 1) sel.value = '0';
+  sel.addEventListener('change', () => { store.set('bl_rep', sel.value); buildGroups(); render(); window.scrollTo(0,0); });
+
+  $('weekEnd').textContent = 'wk ending ' + D.weekEnding;
+  buildGroups();
+  $('boot').style.display = 'none';
+  $('app').style.display = 'block';
+  render();
+}
+
+// ---------- aggregation for the selected rep ----------
+function buildGroups(){
+  const repI = +$('repSel').value;
+  groupIdx = new Map();
+  const nW = D.weeks.length;
+
+  for (const row of D.rows){
+    if (repI >= 0 && row[0] !== repI) continue;
+    const st = D.stores[row[1]];          // [cc,name,addr,city,state]
+    const it = D.items[row[2]];           // [id,desc,brand]
+    const wk = row[3];
+    const key = row[1] + '|' + it[2];
+    let g = groupIdx.get(key);
+    if (!g){
+      g = { sIdx: row[1], cc: st[0], name: st[1], addr: st[2], city: st[3], state: st[4],
+            brand: it[2], wk: new Array(nW).fill(0), items: [] };
+      groupIdx.set(key, g);
+    }
+    let total = 0, lastIdx = -1, recent = 0;
+    for (let i = 0; i < nW; i++){
+      const v = wk[i] || 0;
+      g.wk[i] += v; total += v;
+      if (v > 0){ lastIdx = i; if (i >= recentFrom) recent += v; }
+    }
+    g.items.push({ id: it[0], desc: it[1], wk, total, lastIdx, lapsed: recent === 0 });
+  }
+
+  groups = [...groupIdx.values()];
+  for (const g of groups){
+    g.total = 0; g.lastIdx = -1; let recent = 0;
+    for (let i = 0; i < g.wk.length; i++){
+      const v = g.wk[i];
+      g.total += v;
+      if (v > 0){ g.lastIdx = i; if (i >= recentFrom) recent += v; }
+    }
+    g.lapsed = recent === 0;
+    g.items.sort((a,b) => (b.lapsed - a.lapsed) || b.total - a.total);
+  }
+
+  const lapses = groups.filter(g => g.lapsed).length;
+  $('stLapses').textContent = lapses;
+  $('tabN').textContent = lapses;
+  $('stStores').textContent = new Set(groups.map(g => g.sIdx)).size;
+  $('stBrands').textContent = new Set(groups.map(g => g.brand)).size;
+}
+
+// ---------- search ----------
+function matches(g){
+  if (!query) return true;
+  if (g.name.toUpperCase().includes(query) || g.brand.toUpperCase().includes(query)) return true;
+  for (const it of g.items)
+    if (it.desc.toUpperCase().includes(query) || String(it.id).includes(query)) return true;
+  return false;
+}
+
+// ---------- rendering ----------
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  render(); window.scrollTo(0,0);
+}));
+
+let debounce;
+$('search').addEventListener('input', e => {
+  clearTimeout(debounce);
+  debounce = setTimeout(() => { query = e.target.value.trim().toUpperCase(); render(); }, 120);
+});
+
+function weeksAgoLabel(r){
+  if (r.lastIdx < 0) return 'no orders ' + D.weeks.length + ' wks';
+  const ago = D.weeks.length - 1 - r.lastIdx;
+  return ago === 0 ? 'bought this wk' : 'last: ' + ago + ' wk' + (ago>1?'s':'') + ' ago';
+}
+
+function pulse(wk, lapsedClassDone){
+  const max = Math.max.apply(null, wk.concat([1]));
+  const winPct = ((wk.length - recentFrom) / wk.length * 100).toFixed(2);
+  let h = '<div class="pulse"><span class="win" style="width:' + winPct + '%"></span>';
+  for (const v of wk){
+    h += v > 0
+      ? '<i style="height:' + Math.max(8, Math.round(v/max*100)) + '%"></i>'
+      : '<i class="z"></i>';
+  }
+  return h + '</div>';
+}
+
+function groupRowHTML(g, showStore){
+  const top = showStore ? g.name : g.brand;
+  return '<button class="brow' + (g.lapsed ? ' lapsed' : '') + '" data-key="' + esc(g.sIdx + '|' + g.brand) + '">' +
+    '<div class="r1"><span class="bn">' + esc(top) + '</span><span class="last">' + weeksAgoLabel(g) + '</span></div>' +
+    '<div class="r2">' + pulse(g.wk) + '<span class="cases">' + g.total + ' cs</span></div>' +
+  '</button>';
+}
+
+function chev(){ return '<svg class="chev" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+
+function storeCard(name, sub, rows, openByDefault){
+  const lapsedHere = rows.filter(g => g.lapsed).length;
+  const badge = lapsedHere
+    ? '<span class="badge flag">' + lapsedHere + ' gap' + (lapsedHere>1?'s':'') + '</span>'
+    : '<span class="badge ok">ok</span>';
+  const sorted = [...rows].sort((a,b) => (b.lapsed - a.lapsed) || a.brand.localeCompare(b.brand));
+  return '<div class="card' + (openByDefault ? ' open' : '') + '">' +
+    '<button class="card-head"><div class="tt"><div class="nm">' + esc(name) + '</div>' +
+    '<div class="sub">' + esc(sub) + '</div></div>' + badge + chev() + '</button>' +
+    '<div class="card-body">' + sorted.map(g => groupRowHTML(g,false)).join('') + '</div></div>';
+}
+
+function brandCard(brand, rows){
+  const lapsedHere = rows.filter(g => g.lapsed).length;
+  const badge = lapsedHere
+    ? '<span class="badge flag">' + lapsedHere + ' gap' + (lapsedHere>1?'s':'') + '</span>'
+    : '<span class="badge ok">ok</span>';
+  const sorted = [...rows].sort((a,b) => (b.lapsed - a.lapsed) || a.name.localeCompare(b.name));
+  return '<div class="card"><button class="card-head"><div class="tt"><div class="nm">' + esc(brand) + '</div>' +
+    '<div class="sub">' + rows.length + ' store' + (rows.length>1?'s':'') + '</div></div>' + badge + chev() + '</button>' +
+    '<div class="card-body">' + sorted.map(g => groupRowHTML(g,true)).join('') + '</div></div>';
+}
+
+function byStore(list){
+  const m = new Map();
+  for (const g of list){
+    if (!m.has(g.sIdx)) m.set(g.sIdx, []);
+    m.get(g.sIdx).push(g);
+  }
+  return [...m.values()].sort((a,b) =>
+    b.filter(g=>g.lapsed).length - a.filter(g=>g.lapsed).length || a[0].name.localeCompare(b[0].name));
+}
+
+function render(){
+  const el = $('list');
+  const vis = groups.filter(matches);
+  let html = '';
+
+  if (tab === 'lapses'){
+    const flagged = byStore(vis.filter(g => g.lapsed));
+    html = flagged.length
+      ? '<div class="daylabel">No orders in the last ' + (D.recentWeeks||4) + ' weeks</div>' +
+        flagged.map(rows => storeCard(rows[0].name, rows[0].addr + ' \u00b7 ' + rows[0].city + ', ' + rows[0].state, rows, true)).join('')
+      : '<div class="empty">' + (query ? 'No gaps match \u201c' + esc(query) + '\u201d.' : 'No brand gaps for this selection. \uD83C\uDF89') + '</div>';
+  }
+  else if (tab === 'stores'){
+    const sgs = byStore(vis);
+    html = sgs.length
+      ? sgs.map(rows => storeCard(rows[0].name, rows[0].addr + ' \u00b7 ' + rows[0].city + ', ' + rows[0].state, rows, false)).join('')
+      : '<div class="empty">Nothing matches \u201c' + esc(query) + '\u201d.</div>';
+  }
+  else {
+    const m = new Map();
+    for (const g of vis){ if (!m.has(g.brand)) m.set(g.brand, []); m.get(g.brand).push(g); }
+    const bgs = [...m.entries()].sort((a,b) =>
+      b[1].filter(g=>g.lapsed).length - a[1].filter(g=>g.lapsed).length || a[0].localeCompare(b[0]));
+    html = bgs.length
+      ? bgs.map(([brand, rows]) => brandCard(brand, rows)).join('')
+      : '<div class="empty">Nothing matches \u201c' + esc(query) + '\u201d.</div>';
+  }
+  el.innerHTML = html;
+}
+
+// ---------- delegation ----------
+$('list').addEventListener('click', e => {
+  const head = e.target.closest('.card-head');
+  if (head){ head.parentElement.classList.toggle('open'); return; }
+  const row = e.target.closest('.brow');
+  if (row) openSheet(row.dataset.key);
+});
+
+// ---------- bottom sheet (item details) ----------
+function openSheet(key){
+  const g = groupIdx.get(key);
+  if (!g) return;
+  $('shBrand').textContent = g.brand;
+  $('shStore').textContent = g.name + ' \u00b7 ' + g.city + ', ' + g.state;
+  $('shList').innerHTML = g.items.map(it =>
+    '<div class="brow' + (it.lapsed ? ' lapsed' : '') + '">' +
+      '<div class="r1"><span class="bn">' + esc(it.desc) + '</span><span class="last">' + weeksAgoLabel(it) + '</span></div>' +
+      '<div class="r1" style="margin-top:2px"><span class="sku">#' + esc(it.id) + '</span></div>' +
+      '<div class="r2">' + pulse(it.wk) + '<span class="cases">' + it.total + ' cs</span></div>' +
+    '</div>').join('');
+  $('backdrop').classList.add('show');
+  $('sheet').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeSheet(){
+  $('backdrop').classList.remove('show');
+  $('sheet').classList.remove('show');
+  document.body.style.overflow = '';
+}
+$('backdrop').addEventListener('click', closeSheet);
+let startY = null;
+$('sheet').addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive:true});
+$('sheet').addEventListener('touchend', e => {
+  if (startY != null && e.changedTouches[0].clientY - startY > 70 && $('sheet').querySelector('.sh-list').scrollTop <= 0) closeSheet();
+  startY = null;
+}, {passive:true});
+
+})();
+</script>
+</body>
+</html>
