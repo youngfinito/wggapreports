@@ -35,7 +35,21 @@ header{position:sticky;top:0;z-index:20;background:var(--ink);color:#F2F1E8;padd
 .hdr-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .brandline{font-family:var(--disp);font-weight:700;font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;color:#9DBFA8}
 #weekEnd{font-size:.74rem;color:#9DBFA8;white-space:nowrap}
-#repSel{margin-top:8px;width:100%;appearance:none;-webkit-appearance:none;background:#24402F url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="%239DBFA8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat right 14px center;color:#fff;border:1px solid #3C5847;border-radius:12px;padding:12px 40px 12px 14px;font-family:var(--disp);font-weight:700;font-size:1.15rem;text-transform:uppercase;letter-spacing:.02em;outline:none}
+.replabel{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
+#repName{font-family:var(--disp);font-weight:700;font-size:1.45rem;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#switchRep{flex-shrink:0;font-family:var(--disp);font-weight:600;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:#9DBFA8;border:1px solid #3C5847;border-radius:999px;padding:7px 14px;min-height:34px}
+
+/* ============ REP PICKER ============ */
+#picker{display:none;min-height:100vh;background:var(--ink);color:#F2F1E8;padding:24px 20px calc(40px + env(safe-area-inset-bottom));max-width:680px;margin:0 auto}
+#picker .mark{font-family:var(--disp);font-weight:700;font-size:.8rem;letter-spacing:.22em;text-transform:uppercase;color:#9DBFA8;margin:18px 0 8px;text-align:center}
+#picker h1{font-family:var(--disp);font-weight:700;font-size:2rem;text-transform:uppercase;text-align:center;margin-bottom:6px}
+#picker .wk{text-align:center;color:#9DBFA8;font-size:.85rem;margin-bottom:26px}
+.repgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.repgrid button{background:#24402F;border:1px solid #3C5847;border-radius:14px;padding:18px 12px;font-family:var(--disp);font-weight:700;font-size:1.05rem;text-transform:uppercase;letter-spacing:.02em;color:#fff;min-height:64px;line-height:1.15;transition:background .12s}
+.repgrid button:active{background:#2E5039}
+.repgrid button .gp{display:block;margin-top:4px;font-size:.72rem;font-weight:600;letter-spacing:.06em;color:var(--amber-line)}
+.repgrid button .gp.ok{color:#9DBFA8}
+.repgrid button.all{grid-column:1 / -1;background:transparent;border-style:dashed;color:#9DBFA8}
 .statbar{display:flex;gap:18px;margin-top:10px;padding-bottom:10px}
 .statbar .st{display:flex;align-items:baseline;gap:5px}
 .statbar .st b{font-family:var(--disp);font-weight:700;font-size:1.15rem}
@@ -112,13 +126,23 @@ main{padding:8px 12px 0}
   <div id="bootMsg">Loading the latest report…</div>
 </div>
 
+<div id="picker">
+  <div class="mark">Dora's Naturals · Field Tools</div>
+  <h1>Who's this?</h1>
+  <div class="wk" id="pickerWk"></div>
+  <div class="repgrid" id="repGrid"></div>
+</div>
+
 <div id="app">
   <header>
     <div class="hdr-row">
       <div class="brandline">Brand Lapses</div>
       <div id="weekEnd"></div>
     </div>
-    <select id="repSel" aria-label="Choose rep"></select>
+    <div class="replabel">
+      <div id="repName"></div>
+      <button id="switchRep">Switch rep</button>
+    </div>
     <div class="statbar">
       <div class="st flag"><b id="stLapses">0</b><span>gaps</span></div>
       <div class="st"><b id="stStores">0</b><span>stores</span></div>
@@ -131,7 +155,7 @@ main{padding:8px 12px 0}
     </nav>
   </header>
 
-  <div class="searchwrap"><input id="search" type="search" placeholder="Search store, brand, item, or item #…" autocomplete="off"></div>
+  <div class="searchwrap"><input id="search" type="search" placeholder="Search store, address, city, brand, item…" autocomplete="off"></div>
   <main id="list"></main>
 </div>
 
@@ -152,6 +176,7 @@ main{padding:8px 12px 0}
 // ---------- state ----------
 let D = null;             // raw data.json
 let recentFrom = 0;       // first week index inside the check window
+let repI = -1;            // selected rep index, -1 = all reps
 let groups = [];          // store+brand groups for the current rep selection
 let groupIdx = new Map(); // key -> group
 let tab = 'lapses';
@@ -182,25 +207,67 @@ function init(data){
   recentFrom = D.weeks.findIndex(c => wkDate(c) >= startD);
   if (recentFrom < 0) recentFrom = Math.max(0, D.weeks.length - ((D.recentWeeks||4)+1));
 
-  // rep picker
-  const sel = $('repSel');
-  sel.innerHTML = '<option value="-1">All reps</option>' +
-    D.reps.map((r,i) => '<option value="' + i + '">' + esc(r) + '</option>').join('');
-  const saved = store.get('bl_rep');
-  if (saved !== null && (saved === '-1' || (D.reps[+saved] !== undefined))) sel.value = saved;
-  else if (D.reps.length === 1) sel.value = '0';
-  sel.addEventListener('change', () => { store.set('bl_rep', sel.value); buildGroups(); render(); window.scrollTo(0,0); });
-
   $('weekEnd').textContent = 'wk ending ' + D.weekEnding;
-  buildGroups();
+  $('pickerWk').textContent = 'Week ending ' + D.weekEnding;
+  buildPicker();
   $('boot').style.display = 'none';
+
+  const saved = store.get('bl_rep');
+  if (saved !== null && (saved === '-1' || D.reps[+saved] !== undefined)) enterApp(+saved);
+  else if (D.reps.length === 1) enterApp(0);
+  else $('picker').style.display = 'block';
+}
+
+// gap counts per rep for the picker badges
+function repGapCounts(){
+  const perRep = D.reps.map(() => new Map());   // rep -> Map(group key -> recent cases)
+  for (const row of D.rows){
+    const m = perRep[row[0]];
+    const key = row[1] + '|' + D.items[row[2]][2];
+    let recent = m.get(key) || 0;
+    const wk = row[3];
+    for (let i = recentFrom; i < wk.length; i++) recent += wk[i] || 0;
+    m.set(key, recent);
+  }
+  return perRep.map(m => { let n = 0; for (const v of m.values()) if (v === 0) n++; return n; });
+}
+
+function buildPicker(){
+  const gaps = repGapCounts();
+  $('repGrid').innerHTML =
+    D.reps.map((r,i) =>
+      '<button data-rep="' + i + '">' + esc(r) +
+      (gaps[i]
+        ? '<span class="gp">' + gaps[i] + ' gap' + (gaps[i]>1?'s':'') + '</span>'
+        : '<span class="gp ok">no gaps</span>') +
+      '</button>').join('') +
+    '<button class="all" data-rep="-1">View all reps</button>';
+}
+
+$('repGrid').addEventListener('click', e => {
+  const b = e.target.closest('button[data-rep]');
+  if (b) enterApp(+b.dataset.rep);
+});
+$('switchRep').addEventListener('click', () => {
+  $('app').style.display = 'none';
+  $('picker').style.display = 'block';
+  window.scrollTo(0,0);
+});
+
+function enterApp(i){
+  repI = i;
+  store.set('bl_rep', String(i));
+  $('repName').textContent = i < 0 ? 'All reps' : D.reps[i];
+  buildGroups();
+  $('picker').style.display = 'none';
   $('app').style.display = 'block';
+  query = ''; $('search').value = '';
   render();
+  window.scrollTo(0,0);
 }
 
 // ---------- aggregation for the selected rep ----------
 function buildGroups(){
-  const repI = +$('repSel').value;
   groupIdx = new Map();
   const nW = D.weeks.length;
 
@@ -213,9 +280,10 @@ function buildGroups(){
     let g = groupIdx.get(key);
     if (!g){
       g = { sIdx: row[1], cc: st[0], name: st[1], addr: st[2], city: st[3], state: st[4],
-            brand: it[2], wk: new Array(nW).fill(0), items: [] };
+            brand: it[2], wk: new Array(nW).fill(0), items: [], repSet: new Set() };
       groupIdx.set(key, g);
     }
+    g.repSet.add(D.reps[row[0]]);
     let total = 0, lastIdx = -1, recent = 0;
     for (let i = 0; i < nW; i++){
       const v = wk[i] || 0;
@@ -244,10 +312,15 @@ function buildGroups(){
   $('stBrands').textContent = new Set(groups.map(g => g.brand)).size;
 }
 
-// ---------- search ----------
+// ---------- search: store, address, city, state, cust code, brand, item ----------
 function matches(g){
   if (!query) return true;
-  if (g.name.toUpperCase().includes(query) || g.brand.toUpperCase().includes(query)) return true;
+  if (g.name.toUpperCase().includes(query)
+   || g.brand.toUpperCase().includes(query)
+   || g.addr.toUpperCase().includes(query)
+   || g.city.toUpperCase().includes(query)
+   || g.state.toUpperCase().includes(query)
+   || g.cc.includes(query)) return true;
   for (const it of g.items)
     if (it.desc.toUpperCase().includes(query) || String(it.id).includes(query)) return true;
   return false;
@@ -327,6 +400,16 @@ function byStore(list){
     b.filter(g=>g.lapsed).length - a.filter(g=>g.lapsed).length || a[0].name.localeCompare(b[0].name));
 }
 
+function storeSub(rows){
+  let sub = rows[0].addr + ' \u00b7 ' + rows[0].city + ', ' + rows[0].state;
+  if (repI < 0){
+    const reps = new Set();
+    for (const g of rows) for (const r of g.repSet) reps.add(r);
+    sub += ' \u00b7 ' + [...reps].join(', ');
+  }
+  return sub;
+}
+
 function render(){
   const el = $('list');
   const vis = groups.filter(matches);
@@ -336,13 +419,13 @@ function render(){
     const flagged = byStore(vis.filter(g => g.lapsed));
     html = flagged.length
       ? '<div class="daylabel">No orders in the last ' + (D.recentWeeks||4) + ' weeks</div>' +
-        flagged.map(rows => storeCard(rows[0].name, rows[0].addr + ' \u00b7 ' + rows[0].city + ', ' + rows[0].state, rows, true)).join('')
+        flagged.map(rows => storeCard(rows[0].name, storeSub(rows), rows, true)).join('')
       : '<div class="empty">' + (query ? 'No gaps match \u201c' + esc(query) + '\u201d.' : 'No brand gaps for this selection. \uD83C\uDF89') + '</div>';
   }
   else if (tab === 'stores'){
     const sgs = byStore(vis);
     html = sgs.length
-      ? sgs.map(rows => storeCard(rows[0].name, rows[0].addr + ' \u00b7 ' + rows[0].city + ', ' + rows[0].state, rows, false)).join('')
+      ? sgs.map(rows => storeCard(rows[0].name, storeSub(rows), rows, false)).join('')
       : '<div class="empty">Nothing matches \u201c' + esc(query) + '\u201d.</div>';
   }
   else {
